@@ -130,13 +130,33 @@ export default function Home() {
           },
         }
       );
-
-      const videoUrl = response.data.data?.video_id; 
-      setVideoUrl(`https://api.heygen.com/v1/video_status.get?video_id=${videoUrl}` || null);
+    
+      const videoId = response.data.data?.video_id; 
+      if (videoId) {
+        const options = {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+            'x-api-key': apiKey,
+          },
+        };
+    
+        // Fetch video status and set the video URL
+        const videoStatusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, options);
+        if (!videoStatusResponse.ok) {
+          throw new Error('Failed to fetch video status');
+        }
+    
+        const videoStatusData = await videoStatusResponse.json();
+        setVideoUrl(videoStatusData.video_url || null); // Ensure to handle case where video_url might be undefined
+      } else {
+        console.error("Video ID not found in response:", response);
+      }
       console.log("Video response:", response);
     } catch (error) {
       console.error("Error generating video:", error);
     }
+    
   };
 
   return (
