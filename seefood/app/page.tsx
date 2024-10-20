@@ -4,12 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import axios from "axios";
+import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
+
 
 export default function Home() {
   const [base64Image, setBase64Image] = useState<string | null>(null);
   const [recipe, setRecipe] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [onsubmit, setOnSubmit] = useState(false)
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,21 +69,73 @@ export default function Home() {
       const fullContent = response.data.choices[0].message.content;
       console.log(fullContent);
 
-      // Splitting the response into recipe and ingredients parts
       const ingredientsMatch = fullContent.match(/#### Ingredients:([\s\S]*?)#### Instructions:/);
       const recipeMatch = fullContent.match(/#### Instructions:([\s\S]*)/);
 
       const ingredientsText = ingredientsMatch ? ingredientsMatch[1].trim() : "No ingredients found.";
       const recipeText = recipeMatch ? recipeMatch[1].trim() : "No recipe found.";
-
+      setOnSubmit(!onsubmit)
       setIngredients(ingredientsText);
       setRecipe(recipeText);
+
+      // Call to HeyGen API for video generation
+      await generateVideo(recipeText);
 
       // Set the video URL from the API response if provided
       const videoMatch = fullContent.match(/#### Video URL: (.+)/);
       setVideoUrl(videoMatch ? videoMatch[1].trim() : null);
     } catch (error) {
       console.error("Error submitting image: ", error);
+    }
+  };
+
+  const generateVideo = async (inputText: string) => {
+    const apiKey = process.env.NEXT_PUBLIC_HEYGEN_API_KEY; 
+
+    const videoData = {
+      video_inputs: [
+        {
+          character: {
+            type: "avatar",
+            avatar_id: "Daisy-inskirt-20220818",
+            avatar_style: "normal",
+          },
+          voice: {
+            type: "text",
+            input_text: inputText,
+            voice_id: "2d5b0e6cf36f460aa7fc47e3eee4ba54",
+          },
+          background: {
+            type: "color",
+            value: "#008000",
+          },
+        },
+      ],
+      dimension: {
+        width: 1280,
+        height: 720,
+      },
+      aspect_ratio: "16:9",
+      test: true,
+    };
+
+    try {
+      const response = await axios.post(
+        'https://api.heygen.com/v2/video/generate',
+        videoData,
+        {
+          headers: {
+            'X-Api-Key': apiKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const videoUrl = response.data.data?.video_id; 
+      setVideoUrl(`https://api.heygen.com/v1/video_status.get?video_id=${videoUrl}` || null);
+      console.log("Video response:", response);
+    } catch (error) {
+      console.error("Error generating video:", error);
     }
   };
 
@@ -110,7 +166,10 @@ export default function Home() {
       {/* Instruction Video Section */}
       <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-4xl mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Instruction Video</h2>
-        {!videoUrl && <p>No videos yet but you can still watch this:</p>}
+        {!videoUrl && onsubmit && <Progress value={33} />}
+        <Separator className="my-7"/>
+
+        {!videoUrl  && onsubmit && "Loading Video, but you can still watch this:"}
 
         <div className="flex justify-center">
           <iframe 
