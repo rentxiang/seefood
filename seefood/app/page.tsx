@@ -133,12 +133,16 @@ export default function Home() {
     
       const videoId = response.data.data?.video_id; 
       if (videoId) {
-        const options = {
+        if (!apiKey) {
+          throw new Error("API key is not defined");
+        }
+    
+        const options: RequestInit = {
           method: 'GET',
           headers: {
             accept: 'application/json',
-            'x-api-key': apiKey,
-          },
+            'x-api-key': apiKey, // Ensure apiKey is defined here
+          } as HeadersInit, // Type assertion to ensure correct type
         };
     
         // Fetch video status and set the video URL
@@ -156,6 +160,8 @@ export default function Home() {
     } catch (error) {
       console.error("Error generating video:", error);
     }
+    
+    
     
   };
 
