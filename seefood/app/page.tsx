@@ -4,16 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import axios from "axios";
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const [base64Image, setBase64Image] = useState<string | null>(null);
   const [recipe, setRecipe] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [onsubmit, setOnSubmit] = useState(false)
+  const [onsubmit, setOnSubmit] = useState(false);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -44,7 +43,7 @@ export default function Home() {
         content: [
           {
             type: "text",
-            text: "What's the recipe for this food? Return two parts: one for the recipe and one for the ingredients, Please provide the recipe using the following format:\n\n### Recipe: {Recipe Title}\n\n#### Ingredients:\n{List of Ingredients}\n\n#### Instructions:\n1. {Step 1}\n2. {Step 2}\n...\n",
+            text: "What's the recipe for this food? Return two parts: one for the recipe and one for the ingredients. Please provide the recipe using the following format:\n\n### Recipe: {Recipe Title}\n\n#### Ingredients:\n{List of Ingredients}\n\n#### Instructions:\n1. {Step 1}\n2. {Step 2}\n...\n",
           },
           {
             type: "image_url",
@@ -74,7 +73,7 @@ export default function Home() {
 
       const ingredientsText = ingredientsMatch ? ingredientsMatch[1].trim() : "No ingredients found.";
       const recipeText = recipeMatch ? recipeMatch[1].trim() : "No recipe found.";
-      setOnSubmit(!onsubmit)
+      setOnSubmit(true);
       setIngredients(ingredientsText);
       setRecipe(recipeText);
 
@@ -82,16 +81,16 @@ export default function Home() {
       await generateVideo(recipeText);
 
       // Set the video URL from the API response if provided
-      const videoMatch = fullContent.match(/#### Video URL: (.+)/);
-      setVideoUrl(videoMatch ? videoMatch[1].trim() : null);
+      // const videoMatch = fullContent.match(/#### Video URL: (.+)/);
+      // setVideoUrl(videoMatch ? videoMatch[1].trim() : null);
     } catch (error) {
       console.error("Error submitting image: ", error);
     }
   };
 
   const generateVideo = async (inputText: string) => {
-    const apiKey = process.env.NEXT_PUBLIC_HEYGEN_API_KEY; 
-  
+    const apiKey = process.env.NEXT_PUBLIC_HEYGEN_API_KEY;
+
     const videoData = {
       video_inputs: [
         {
@@ -106,8 +105,8 @@ export default function Home() {
             voice_id: "2d5b0e6cf36f460aa7fc47e3eee4ba54",
           },
           background: {
-            type: "color",
-            value: "#008000",
+            type: "image",
+            url: "https://www.kraftmaid.com/product_images/uploaded_images/3-ellis-kitchen-2400x1600.jpg",
           },
         },
       ],
@@ -118,7 +117,7 @@ export default function Home() {
       aspect_ratio: "16:9",
       test: true,
     };
-  
+
     try {
       const response = await axios.post(
         'https://api.heygen.com/v2/video/generate',
@@ -130,13 +129,13 @@ export default function Home() {
           },
         }
       );
-    
-      const videoId = response.data.data?.video_id; 
+
+      const videoId = response.data.data?.video_id;
       if (!videoId) {
         console.error("Video ID not found in response:", response);
         return;
       }
-  
+
       // Fetch video status repeatedly until completed
       const checkVideoStatus = async () => {
         const options: RequestInit = {
@@ -146,34 +145,35 @@ export default function Home() {
             'x-api-key': apiKey,
           } as HeadersInit,
         };
-  
+
         try {
           const videoStatusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, options);
           if (!videoStatusResponse.ok) {
             throw new Error('Failed to fetch video status');
           }
-  
+
           const videoStatusData = await videoStatusResponse.json();
           console.log("Video status:", videoStatusData);
-  
+
           // Check the status of the video
           if (videoStatusData.status === 'completed') {
             setVideoUrl(videoStatusData.video_url || null); // Update video URL when completed
             clearInterval(intervalId); // Clear the interval when video is ready
+          } else {
+            console.log("Video status:", videoStatusData.status); 
           }
         } catch (error) {
           console.error("Error fetching video status:", error);
         }
       };
-  
+
       // Set an interval to check the video status every few seconds
-      const intervalId = setInterval(checkVideoStatus, 15000); // Check every 15 seconds
-  
+      const intervalId = setInterval(checkVideoStatus, 5000); // Check every 5 seconds
+
     } catch (error) {
       console.error("Error generating video:", error);
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 sm:p-20 flex flex-col items-center">
@@ -205,7 +205,7 @@ export default function Home() {
         {!videoUrl && onsubmit && <Progress value={33} />}
         <Separator className="my-7"/>
 
-        {!videoUrl  && onsubmit && "Loading Video, but you can still watch this:"}
+        {!videoUrl && onsubmit && "Loading Video, but you can still watch this:"}
 
         <div className="flex justify-center">
           <iframe 
@@ -240,8 +240,8 @@ export default function Home() {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Recipe</h2>
           {recipe ? (
             <div className="text-gray-700">
-              {recipe.split('\n').map((step, index) => (
-                <div key={index} className="mb-1">{step.trim()}</div>
+              {recipe.split('\n').map((item, index) => (
+                <div key={index} className="mb-1">{item.trim()}</div>
               ))}
             </div>
           ) : (
