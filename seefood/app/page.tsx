@@ -151,16 +151,17 @@ export default function Home() {
           if (!videoStatusResponse.ok) {
             throw new Error('Failed to fetch video status');
           }
+          console.log("Video response:", videoStatusResponse);
 
           const videoStatusData = await videoStatusResponse.json();
-          console.log("Video status:", videoStatusData);
+          console.log("Video status json:", videoStatusData);
 
           // Check the status of the video
-          if (videoStatusData.status === 'completed') {
-            setVideoUrl(videoStatusData.video_url || null); // Update video URL when completed
+          if (videoStatusData.data.status === 'completed') {
+            setVideoUrl(videoStatusData.data.video_url || null); // Update video URL when completed
             clearInterval(intervalId); // Clear the interval when video is ready
           } else {
-            console.log("Video status:", videoStatusData.status); 
+            console.log("Video status in processing"); 
           }
         } catch (error) {
           console.error("Error fetching video status:", error);
