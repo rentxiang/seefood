@@ -34,6 +34,7 @@ export default function Home() {
       console.error("No image to submit.");
       return;
     }
+    setOnSubmit(true);
 
     const apiKey = process.env.NEXT_PUBLIC_MISTRAL_API_KEY;
     const model = "pixtral-12b-2409";
@@ -67,13 +68,11 @@ export default function Home() {
 
       const fullContent = response.data.choices[0].message.content;
       console.log(fullContent);
-
-      const ingredientsMatch = fullContent.match(/#### Ingredients:([\s\S]*?)####   Instructions:/);
+      const ingredientsMatch = fullContent.match(/#### Ingredients:([\s\S]*?)#### Instructions:/);
       const recipeMatch = fullContent.match(/#### Instructions:([\s\S]*)/);
 
       const ingredientsText = ingredientsMatch ? ingredientsMatch[1].trim() : "No ingredients found.";
       const recipeText = recipeMatch ? recipeMatch[1].trim().replaceAll("*",'') : "No recipe found.";
-      setOnSubmit(true);
       setIngredients(ingredientsText);
       setRecipe(recipeText);
       console.log(recipeText)
@@ -221,7 +220,7 @@ export default function Home() {
         </div>}
         {videoUrl &&
         <div className="flex justify-center">
-          <p className="text-muted">The video is downloaded.</p>
+          <p className="text-lg">The video is downloaded.</p>
           <iframe 
             width="560" 
             height="315" 
