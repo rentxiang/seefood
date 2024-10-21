@@ -91,7 +91,7 @@ export default function Home() {
 
   const generateVideo = async (inputText: string) => {
     const apiKey = process.env.NEXT_PUBLIC_HEYGEN_API_KEY; 
-
+  
     const videoData = {
       video_inputs: [
         {
@@ -118,7 +118,7 @@ export default function Home() {
       aspect_ratio: "16:9",
       test: true,
     };
-
+  
     try {
       const response = await axios.post(
         'https://api.heygen.com/v2/video/generate',
@@ -132,38 +132,48 @@ export default function Home() {
       );
     
       const videoId = response.data.data?.video_id; 
-      if (videoId) {
-        if (!apiKey) {
-          throw new Error("API key is not defined");
-        }
-    
+      if (!videoId) {
+        console.error("Video ID not found in response:", response);
+        return;
+      }
+  
+      // Fetch video status repeatedly until completed
+      const checkVideoStatus = async () => {
         const options: RequestInit = {
           method: 'GET',
           headers: {
             accept: 'application/json',
-            'x-api-key': apiKey, // Ensure apiKey is defined here
-          } as HeadersInit, // Type assertion to ensure correct type
+            'x-api-key': apiKey,
+          } as HeadersInit,
         };
-    
-        // Fetch video status and set the video URL
-        const videoStatusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, options);
-        if (!videoStatusResponse.ok) {
-          throw new Error('Failed to fetch video status');
+  
+        try {
+          const videoStatusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, options);
+          if (!videoStatusResponse.ok) {
+            throw new Error('Failed to fetch video status');
+          }
+  
+          const videoStatusData = await videoStatusResponse.json();
+          console.log("Video status:", videoStatusData);
+  
+          // Check the status of the video
+          if (videoStatusData.status === 'completed') {
+            setVideoUrl(videoStatusData.video_url || null); // Update video URL when completed
+            clearInterval(intervalId); // Clear the interval when video is ready
+          }
+        } catch (error) {
+          console.error("Error fetching video status:", error);
         }
-    
-        const videoStatusData = await videoStatusResponse.json();
-        setVideoUrl(videoStatusData.video_url || null); // Ensure to handle case where video_url might be undefined
-      } else {
-        console.error("Video ID not found in response:", response);
-      }
-      console.log("Video response:", response);
+      };
+  
+      // Set an interval to check the video status every few seconds
+      const intervalId = setInterval(checkVideoStatus, 15000); // Check every 15 seconds
+  
     } catch (error) {
       console.error("Error generating video:", error);
     }
-    
-    
-    
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 sm:p-20 flex flex-col items-center">
