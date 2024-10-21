@@ -68,15 +68,15 @@ export default function Home() {
       const fullContent = response.data.choices[0].message.content;
       console.log(fullContent);
 
-      const ingredientsMatch = fullContent.match(/#### Ingredients:([\s\S]*?)#### Instructions:/);
+      const ingredientsMatch = fullContent.match(/#### Ingredients:([\s\S]*?)####   Instructions:/);
       const recipeMatch = fullContent.match(/#### Instructions:([\s\S]*)/);
 
       const ingredientsText = ingredientsMatch ? ingredientsMatch[1].trim() : "No ingredients found.";
-      const recipeText = recipeMatch ? recipeMatch[1].trim() : "No recipe found.";
+      const recipeText = recipeMatch ? recipeMatch[1].trim().replaceAll("*",'') : "No recipe found.";
       setOnSubmit(true);
       setIngredients(ingredientsText);
       setRecipe(recipeText);
-
+      console.log(recipeText)
       // Call to HeyGen API for video generation
       await generateVideo(recipeText);
 
@@ -151,14 +151,13 @@ export default function Home() {
           if (!videoStatusResponse.ok) {
             throw new Error('Failed to fetch video status');
           }
-          console.log("Video response:", videoStatusResponse);
 
           const videoStatusData = await videoStatusResponse.json();
           console.log("Video status json:", videoStatusData);
 
           // Check the status of the video
           if (videoStatusData.data.status === 'completed') {
-            setVideoUrl(videoStatusData.data.video_url || null); // Update video URL when completed
+            setVideoUrl(videoStatusData.data.video_url); // Update video URL when completed
             clearInterval(intervalId); // Clear the interval when video is ready
           } else {
             console.log("Video status in processing"); 
@@ -183,6 +182,8 @@ export default function Home() {
         <div className="text-8xl">👵🍝</div>
         <h1 className="text-4xl font-bold text-gray-800 mt-2">Grandma&apos;s Secret Recipe</h1>
         <p className="text-lg text-gray-600 mt-2">Discover the recipe and ingredients from a picture</p>
+        <p className="text-sm text-gray-600 mt-2">And the Instruction Video!</p>
+
       </div>
 
       {/* Image Upload Section */}
@@ -207,17 +208,28 @@ export default function Home() {
         <Separator className="my-7"/>
 
         {!videoUrl && onsubmit && "Loading Video, but you can still watch this:"}
-
+        {!videoUrl && onsubmit &&
+        <div className="flex justify-center">
+        <iframe 
+          width="560" 
+          height="315" 
+          src={ "https://www.youtube.com/embed/dQw4w9WgXcQ"} // Replace with your video URL
+          title="Instruction Video"
+          className="rounded-lg"
+          allowFullScreen
+        />
+        </div>}
+        {videoUrl &&
         <div className="flex justify-center">
           <iframe 
             width="560" 
             height="315" 
-            src={videoUrl ? videoUrl : "https://www.youtube.com/embed/dQw4w9WgXcQ"} // Replace with your video URL
+            src={videoUrl} // Replace with your video URL
             title="Instruction Video"
             className="rounded-lg"
             allowFullScreen
           />
-        </div>
+        </div>}
       </div>
 
       {/* Recipe and Ingredients Section */}
