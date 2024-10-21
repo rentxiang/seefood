@@ -157,7 +157,8 @@ export default function Home() {
 
           // Check the status of the video
           if (videoStatusData.data.status === 'completed') {
-            setVideoUrl(videoStatusData.data.video_url); // Update video URL when completed
+            setVideoUrl(`https://app.heygen.com/preview/${videoId}`); // Update video URL when completed
+            // setDownLoad(videoStatusData.data.video_url)
             clearInterval(intervalId); // Clear the interval when video is ready
           } else {
             console.log("Video status in processing"); 
